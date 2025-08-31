@@ -12,10 +12,10 @@ let canvasSize = 600
 * @enum {{name: string, hex: string}}
 */
 const Colors = Object.freeze({
-  0: { num: 0, name: "red", hex: "#f54242" },
-  1: { num: 1, name: "blue", hex: "#4287f5" },
-  2: { num: 2, name: "green", hex: "#69ab65" },
-  3: { num: 3, name: "yellow", hex: "#fff196" }
+  0: { num: 0, enemy: 1, name: "red", hex: "#f54242" },
+  1: { num: 1, enemy: 2, name: "blue", hex: "#4287f5" },
+  2: { num: 2, enemy: 3, name: "green", hex: "#69ab65" },
+  3: { num: 3, enemy: 0, name: "yellow", hex: "#fff196" }
 });
 
 function preload() {
@@ -34,23 +34,6 @@ function setup() {
 
   ballsManager = new BallsManager()
   ballsManager.setup()
-
-  const headerRow = document.getElementById('header-row');
-  Object.values(Colors).map((color) => {
-    const headerCell = document.createElement('th')
-    headerCell.innerHTML = color.name;
-    headerCell.style.color = color.hex;
-    headerRow.appendChild(headerCell);
-  });
-
-  const colorCountRow = document.getElementById('count-row')
-  colorCountRow.innerHTML = ''
-  Object.values(Colors).map((color) => {
-    elem = document.createElement('td');
-    elem.setAttribute('id', `count-${color.name}`);
-    elem.innerHTML = bricksManager.colorCounter[color.name];
-    colorCountRow.appendChild(elem);
-  });
 }
 
 function draw() {
@@ -58,10 +41,6 @@ function draw() {
 
   bricksManager.draw()
   ballsManager.manage()
-  Object.values(Colors).forEach((color) => {
-    elem = document.getElementById(`count-${color.name}`);
-    elem.innerHTML = bricksManager.colorCounter[color.name]
-  })
 }
 
 class BricksManager {
@@ -69,12 +48,6 @@ class BricksManager {
     this.numPerSide = numPerSide
     this.grid = []
     this.size = canvasSize / numPerSide
-    this.colorCounter = {
-      red: 0,
-      blue: 0,
-      green: 0,
-      yellow: 0,
-    }
   }
 
   setup() {
@@ -84,15 +57,14 @@ class BricksManager {
         let team = Colors[0]
         if (x >= this.numPerSide / 2) {
           team = Colors[1]
-          if (y < this.numPerSide / 2) {
+          if (y <= this.numPerSide / 4) {
             team = Colors[3]
           }
-        } else if (y >= this.numPerSide / 2) {
+        } else if (y >= this.numPerSide / 4 * 3) {
           team = Colors[2]
         }
         let pos = createVector(this.size * x, this.size * y)
         row.push(new Brick(pos, this.size, team))
-        this.colorCounter[team.name]++;
       }
       this.grid.push(row)
     }
@@ -104,14 +76,6 @@ class BricksManager {
         this.grid[y][x].draw()
       }
     }
-  }
-
-  incrementColorCount(color) {
-    this.colorCounter[color]++;
-  }
-
-  decrementColorCount(color) {
-    this.colorCounter[color]--;
   }
 }
 
@@ -142,25 +106,25 @@ class BallsManager {
     this.ballSize = canvasSize / bricksManager.numPerSide / 2
     // red ball
     this.balls.push(
-      new Ball(createVector(30, 40),
+      new Ball(createVector(550, 440),
         createVector(6, 3),
         this.ballSize,
         Colors[0]))
     // blue ball
     this.balls.push(
-      new Ball(createVector(350, 380),
+      new Ball(createVector(30, 40),
         createVector(-4, 4),
         this.ballSize,
         Colors[1]))
     // green ball
     this.balls.push(
-      new Ball(createVector(260, 500),
+      new Ball(createVector(260, 40),
         createVector(-4, 4),
         this.ballSize,
         Colors[2]))
     // yellow ball
     this.balls.push(
-      new Ball(createVector(400, 40),
+      new Ball(createVector(350, 380),
         createVector(-4, 3),
         this.ballSize,
         Colors[3]))
@@ -185,10 +149,8 @@ class BallsManager {
       let i = Math.floor(checkX / bricksManager.size);
       let j = Math.floor(checkY / bricksManager.size);
       if (i >= 0 && i < bricksManager.numPerSide && j >= 0 && j < bricksManager.numPerSide) {
-        if (ball.team.num != bricksManager.grid[j][i].team.num) {
-          bricksManager.decrementColorCount(bricksManager.grid[j][i].team.name)
-          bricksManager.grid[j][i].team = Colors[ball.team.num]
-          bricksManager.incrementColorCount(ball.team.name);
+        if (ball.team.num == bricksManager.grid[j][i].team.num) {
+          bricksManager.grid[j][i].team = Colors[ball.team.enemy]
           // Determine bounce direction based on the angle
           if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
             ball.vel.x = -ball.vel.x;
@@ -237,7 +199,6 @@ class Ball {
 
   draw() {
     push()
-    stroke(0)
     ellipseMode(CENTER)
     fill(this.team.hex)
     circle(this.pos.x, this.pos.y, this.r * 2)

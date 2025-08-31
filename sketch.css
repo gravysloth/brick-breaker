@@ -5,3 +5,16 @@ body {
 	font-family: 'Roboto Mono', monospace;
 	color: aliceblue;
 }
+
+table {
+	margin-top: 20px;
+	border: 1px solid white;
+}
+
+td,
+th {
+	padding: 5px;
+	width: 100px;
+	text-align: center;
+	border: 1px solid white;
+}
